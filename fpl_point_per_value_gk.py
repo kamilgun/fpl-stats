@@ -28,7 +28,12 @@ players_df['now_cost'] = players_df['now_cost'] / 10  # 50 -> 5.0M gibi
 
 # 4. Add player name and rating
 players_df['name'] = players_df['first_name'] + ' ' + players_df['second_name']
-players_df['value_ratio'] = players_df['total_points'] / (players_df['now_cost'] / 10)
+players_df['value_ratio'] = (players_df['total_points']) / (players_df['now_cost'])
+
+print(players_df['total_points'] .head())
+
+print(players_df['now_cost'] .head())
+print(players_df['value_ratio'] .head())
 
 # 5. Take the top 5 players from position
 top_players_by_position = (
