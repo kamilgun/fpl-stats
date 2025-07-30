@@ -15,7 +15,7 @@ print(players.columns)  # Print columns to see available data
 position_map = {
     1: "Goalkeeper",
     2: "Defender",
-    3: "Mieldfielder",
+    3: "Midfielder",
     4: "Forward"
 }
 players["position"] = players["element_type"].map(position_map)
@@ -41,7 +41,7 @@ df['value_ratio'] = df['total_points'] / df['now_cost']
 df_filtered = df[df['minutes'] > 500]
 
 # Get the top 30 players
-top_value_players = df_filtered.sort_values(by='value_ratio', ascending=False).head(30)
+top_value_players = df_filtered.sort_values(by='value_ratio', ascending=False).head(60)
 
 # Show only required columns
 result = top_value_players[['name', 'team_name', 'position', 'now_cost', 'total_points', 'value_ratio']]
@@ -64,11 +64,13 @@ table_data.columns = ['Player', 'Team', 'Position', 'Value', 'Points', 'Points/V
 print(tabulate(table_data, headers='keys', tablefmt='fancy_grid', showindex=False, floatfmt=".2f"))
 
 # Oranları yuvarla
-result['value_ratio'] = result['value_ratio'].round(2)
-result['now_cost'] = result['now_cost'].round(1)
+table_data['value_ratio'] = result['value_ratio'].round(2)
+table_data['now_cost'] = result['now_cost'].round(1)
 
 #print(result.to_string(index=False))
 print("Satır sayısı:", len(table_data))
 
+print(table_data.head())  # İlk birkaç satırı yazdır
 
-table_data.to_csv("fpl_stats/player_stats.csv", index=False, encoding='utf-8-sig')
+
+table_data.to_csv("./player_stats.csv", index=False, encoding='utf-8-sig')

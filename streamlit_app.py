@@ -11,16 +11,16 @@ print("Satır sayısı:", len(df))
 print(df.head())  # İlk birkaç satırı yazdır
 
 # Sayfa başlığı
-st.title("FPL Verimlilik Analizi")
+st.title("FPL Efficiency Analysis")
 
 # Pozisyon seçimi
-pozisyonlar = ["Tüm Oyuncular"] + sorted(df["Position"].unique())
-secilen_pozisyon = st.selectbox("Pozisyona göre filtrele", pozisyonlar)
+pozisyonlar = ["All Players"] + sorted(df["Position"].unique())
+secilen_pozisyon = st.selectbox("Filter by Position", pozisyonlar)
 
 print("secilen_pozisyon")
 
 # Filtreleme işlemi
-if secilen_pozisyon != "Tüm Oyuncular":
+if secilen_pozisyon != "All Players":
     df = df[df["Position"] == secilen_pozisyon]
 
 # Verimlilik hesapla (puan / değer)
@@ -30,4 +30,4 @@ df["point_per_value"] = df["Points/Value"]
 df = df.sort_values("point_per_value", ascending=False)
 print(df.columns)
 # Tabloyu göster
-st.dataframe(df[["Player", "Team", "Position", "Value", "Points", "Points/Value"]].head(20))
+st.dataframe(df[["Player", "Team", "Position", "Value", "Points", "value_ratio"]].head(60))
