@@ -1,5 +1,16 @@
 import streamlit as st
+import requests
 import pandas as pd
+from select_totalpoints import grafik_selected_vs_points
+
+# Get data from FPL API
+url = "https://fantasy.premierleague.com/api/bootstrap-static/"
+response = requests.get(url)
+data = response.json()
+
+# Export data to DataFrame
+players = pd.DataFrame(data['elements'])
+teams = pd.DataFrame(data['teams'])
 
 # CSV dosyasını oku
 import os
@@ -31,3 +42,8 @@ df = df.sort_values("point_per_value", ascending=False)
 print(df.columns)
 # Tabloyu göster
 st.dataframe(df[["Player", "Team", "Position", "Value", "Points", "value_ratio"]].head(60))
+
+st.image("fantasy-football_logo.jpg", use_container_width=True)
+
+grafik_selected_vs_points(players)
+
