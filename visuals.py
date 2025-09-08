@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 import pandas as pd
 import matplotlib.pyplot as plt
+import altair as alt
 
 # Get data from FPL API
 url = "https://fantasy.premierleague.com/api/bootstrap-static/"
@@ -17,7 +18,7 @@ def grafik_selected_vs_points(players):
     # convert column to float
     players['selected_by_percent'] = pd.to_numeric(players['selected_by_percent'], errors='coerce')
 
-    st.subheader("Player Selection Rate vs Total Points")
+    st.title("Player Selection Rate vs Total Points")
 
     # Get filter from user
     min_sel = st.slider("Min selection rate (%)", 0.0, 100.0, 3.0)
@@ -46,6 +47,7 @@ def grafik_selected_vs_points(players):
     st.pyplot(fig)
 
 def grafik_value_vs_points():
+    
     df = pd.read_csv("./player_stats.csv")
 
     st.title("FPL Efficiency Analysis")
@@ -63,21 +65,23 @@ def grafik_value_vs_points():
     # En verimli oyuncuları sırala
     df = df.sort_values("point_per_value", ascending=False)
 
-    st.dataframe(df[["Player", "Team", "Position", "Value", "Points", "value_ratio"]].head(60))
+    st.dataframe(df[["Player", "Team", "Position", "Value", "Points", "value_ratio"]].head(120).reset_index(drop=True).rename_axis("Sıra").reset_index())
 
 def player_advice(players):
-    cost_limit = st.slider("Maksimum Oyuncu Fiyatı (milyon)", 4.0, 12.5, 7.5)
-    position = st.selectbox("Pozisyon", ["Tümü", "Kaleci", "Defans", "Orta Saha", "Forvet"])
-    min_minutes = st.slider("Minimum oynadığı dakika", 0, 3000, 500)
-    min_points = st.slider("Minimum puan", 0, 250, 50)
-    sel_range = st.slider("Seçilme oranı (%)", 0.0, 100.0, (5.0, 25.0))
+    st.title("Scout Assisant - Adviced Players")
+    
+    cost_limit = st.slider("Maximum Player Value", 4.0, 12.5, 7.5)
+    position = st.selectbox("Position", ["All", "Goalkeeper", "Defence", "Midfielder", "Forward"])
+    min_minutes = st.slider("Minimum minutes played", 0, 3000, 500)
+    min_points = st.slider("Minimum points", 0, 250, 50)
+    sel_range = st.slider("Selection Rate (%)", 0.0, 100.0, (5.0, 25.0))
 
     # Pozisyon dönüşümü için eşleştirme sözlüğü
     position_map = {
-        1: "Kaleci",
-        2: "Defans",
-        3: "Orta Saha",
-        4: "Forvet"
+        1: "Goalkeeper",
+        2: "Defence",
+        3: "Midfielder",
+        4: "Forward"
     }
 
     # now_cost 10x formatından float'a çevriliyor
@@ -95,11 +99,11 @@ def player_advice(players):
         (players["minutes"] >= min_minutes) &
         (players["total_points"] >= min_points) &
         (players["selected_by_percent"] >= sel_range[0]) &
-        (players["selected_by_percent"] <= sel_range[1])
+        (players["selected_by_percent"] <= sel_range[1]) 
     ]
-
+    
     # Pozisyon filtresi (eğer "Tümü" değilse)
-    if position != "Tümü":
+    if position != "All":
         filtered_players = filtered_players[filtered_players["position_name"] == position]
 
     # Verimlilik oranı hesaplama ve sıralama
@@ -107,5 +111,201 @@ def player_advice(players):
     filtered_players = filtered_players.sort_values("value_ratio", ascending=False)
 
     # Kolonları seçerek göster
-    st.subheader("Scout Asistanı - Önerilen Oyuncular")
-    st.dataframe(filtered_players[["web_name", "team", "position_name", "cost_million", "total_points", "selected_by_percent", "value_ratio"]].reset_index(drop=True))
+    
+    st.dataframe(filtered_players[["web_name", "team", "position_name", "cost_million", "total_points", "selected_by_percent", "value_ratio"]].reset_index(drop=True).rename_axis("Sıra").reset_index())
+
+def hidden_gems():
+    
+    st.title("Hidden Gems - Players with Low Ownership and High Points")
+
+    # Get filter from user
+    ##min_sel = st.slider("Min selection rate (%)", 0.0, 100.0, 1.0)
+    ##min_points = st.slider("Min points", 0, 300, 50)
+    min_sel = 10.0
+    form = 5.0
+    minutes = 200
+
+    players['selected_by_percent'] = pd.to_numeric(players['selected_by_percent'], errors='coerce')
+    players['form'] = pd.to_numeric(players['form'], errors='coerce')
+    players['minutes'] = pd.to_numeric(players['minutes'], errors='coerce')
+
+    new_df = players[['selected_by_percent', 'form', 'minutes']]
+
+    ##print(new_df.head())
+
+    exit()
+
+    # Filter players
+    filtered = players[
+        (players['selected_by_percent'] < min_sel) &
+        (players['form'] >= form) &
+        (players['minutes'] > minutes) 
+    ]
+
+    # Create Graphics
+    fig, ax = plt.subplots()
+    ax.scatter(filtered['selected_by_percent'], filtered['form'])
+
+    # Name the spots
+    for i, row in filtered.iterrows():
+        ax.text(row['selected_by_percent'], row['form'], row['web_name'], fontsize=8)
+
+    ax.set_xlabel('Selection Rate (%)')
+    ax.set_ylabel('Form')
+    ax.set_title('Hidden Gems: Low Ownership vs Total Points!!!')
+
+    # Publish to streamlit
+    st.pyplot(fig)
+
+def team_dependency_ratio():
+    # 🏃‍♂️ Oyuncu katkısı
+    players["contribution"] = players["goals_scored"] + players["assists"]
+
+    # 🏟️ Takım toplam gollerini hesapla
+    team_goals = players.groupby("team")["goals_scored"].sum().reset_index()
+    team_goals.rename(columns={"goals_scored": "team_total_goals", "team": "team_id"}, inplace=True)
+
+    # Merge et: players + teams + team_goals
+    merged = players.merge(teams[["id", "name", "short_name"]], left_on="team", right_on="id", how="left")
+    merged = merged.merge(team_goals, left_on="team", right_on="team_id", how="left")
+
+    # 🔧 TDR hesaplama
+    merged["TDR"] = merged["contribution"] / merged["team_total_goals"]
+
+    st.title("Team Dependency Ratio (TDR) Analysis")
+    st.markdown("The player who contributed the most points to each team is listed in this panel.")
+
+    
+    team_leaders = (
+        merged.sort_values("TDR", ascending=False)
+        .drop_duplicates(subset=["team"])   # her takım için en yüksek TDR’li oyuncu kalır
+        .reset_index(drop=True)
+    )
+
+    # -----------------------------
+    # 📊 Görselleştirme
+    chart = (
+        alt.Chart(team_leaders)
+        .mark_bar()
+        .encode(
+            x=alt.X("short_name:N", title="Team"),
+            y=alt.Y("TDR:Q", axis=alt.Axis(format="%"), title="Team Dependency Ratio"),
+            color="name:N",
+            tooltip=["first_name", "second_name", "name", "goals_scored", "assists", "contribution", "team_total_goals", alt.Tooltip("TDR", format=".0%")]
+        )
+        .properties(height=400)
+    )
+
+    st.altair_chart(chart, use_container_width=True)
+
+    # -----------------------------
+    # 📋 Tablo
+    st.dataframe(
+        team_leaders[["first_name", "second_name", "name", "goals_scored", "assists", "contribution", "team_total_goals", "TDR"]]
+        .sort_values("TDR", ascending=False)
+        .reset_index(drop=True)
+    )          
+   
+def consistency_index():
+    history_df = pd.read_csv("./weekly_exec/weekly_points.csv")
+
+    consistency = (
+        history_df.groupby("player_id")["total_points"]
+        .agg(["mean", "std"])
+        .reset_index()
+    )
+
+    # 4. İstikrar skoru
+    consistency["consistency_index"] = consistency["mean"] / consistency["std"].replace(0, 1)
+
+    st.title("Consistency Index Analysis")
+    st.markdown("Examining a player's weekly points distribution to show how stable or surprising their profile is.")
+
+    consistency = consistency.merge(
+    players[["id", "first_name", "second_name", "team", "web_name", "total_points"]],
+    left_on="player_id", right_on="id", how="left"
+    )
+
+    max_point = history_df["total_points"].max()
+
+    consistency = consistency[consistency["total_points"] > max_point/3]
+
+    consistency = consistency.dropna(subset=["consistency_index"])
+
+    # -----------------------------
+    # 6. Scatterplot
+    chart = (
+        alt.Chart(consistency)
+        .mark_circle(size=60)
+        .encode(
+            x=alt.X("mean:Q", title="Ortalama Puan"),
+            y=alt.Y("std:Q", title="Standart Sapma"),
+            color="team:N",
+            tooltip=["web_name", "total_points", "mean", "std", "consistency_index"]
+        )
+        .properties(height=400)
+    )
+
+    st.altair_chart(chart, use_container_width=True)
+
+    # -----------------------------
+    # 7. Tablo
+    st.dataframe(
+        consistency[["first_name", "second_name", "total_points", "mean", "std", "consistency_index"]]
+        .sort_values("consistency_index", ascending=False)
+        .reset_index(drop=True)
+    )
+
+def show_table():
+    st.title("🏆 Premier League Table")
+
+    url = "https://api.football-data.org/v4/competitions/PL/standings"
+    headers = {"X-Auth-Token": "8df16e10df3c45a08707dfdc1c76ef29"}
+
+    response = requests.get(url, headers=headers)
+    data = response.json()
+    standings = data['standings'][0]['table']
+
+
+    standings = []
+    for team in data["standings"][0]["table"]:
+        standings.append({
+            "Pos": team["position"],
+            "T": team["team"]["name"],
+            "P": team["playedGames"],
+            "W": team["won"],
+            "D": team["draw"],
+            "L": team["lost"],
+            "Pt": team["points"],
+            "Gd": team["goalDifference"],
+        })
+
+
+    league_table = pd.DataFrame(standings)
+    league_table_view = (
+    league_table
+    .sort_values(["Pt", "Gd"], ascending=False)
+    .reset_index(drop=True)
+    )
+    st.markdown(league_table_view.to_html(index=False), unsafe_allow_html=True)
+    #st.dataframe(league_table_view, use_container_width=True, hide_index=True)
+    #st.table(league_table_view.style.hide(axis="index"))
+    #league_table_view = (league_table.reset_index(drop=True))
+    #st.table(league_table_view.style.hide(axis="index"))
+
+def show_player_stats():
+    st.title("📊 Player Statistics – Dynamic Ranking")
+    
+    # Kullanıcıya seçim imkanı
+    metrics = [""] + ["total_points", "now_cost", "minutes", "goals_scored", "assists", "ict_index"]
+    metric_choice = st.selectbox("Sıralama ölçütü seç:", metrics, index=0) 
+
+    order_choice = st.radio("Sıralama yönü:", ["Azalan", "Artan"])
+    ascending = True if order_choice == "Artan" else False
+
+    merged_players = players.merge(teams[["id", "name"]], left_on="team", right_on="id", how="left")
+
+    # Sıralı tablo
+    if metric_choice:
+        sorted_df = merged_players.sort_values(metric_choice, ascending=ascending)
+        st.dataframe(sorted_df[["first_name", "second_name", "name", metric_choice]].head(50))

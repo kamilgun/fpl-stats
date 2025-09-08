@@ -1,6 +1,19 @@
-```gitignore
+# Python cache / derlenmiş dosyalar
 __pycache__/
 *.pyc
+
+# Ortam dosyaları
 .env
+
+# Jupyter notebook checkpoints
 *.ipynb_checkpoints
+
+# OS/IDE dosyaları
 .DS_Store
+.vscode/
+Thumbs.db
+
+# Local veri / cache dosyaları
+*.csv
+weekly_exec/
+player_stats.csv

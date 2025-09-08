@@ -10,7 +10,7 @@ data = response.json()
 players = pd.DataFrame(data['elements'])
 teams = pd.DataFrame(data['teams'])
 
-print(players.columns)  # Print columns to see available data
+#print(players.columns)  # Print columns to see available data
 
 position_map = {
     1: "Goalkeeper",
@@ -25,7 +25,7 @@ players["position"] = players["element_type"].map(position_map)
 df = players[['first_name', 'second_name', 'team', 'position','now_cost', 'total_points', 'minutes']].copy()
 df['now_cost'] = df['now_cost'] / 10  # 50 -> 5.0M gibi
 
-print(df.head())  # Print first few rows to check data
+#print(df.head())  # Print first few rows to check data
 
 # Match team name
 team_map = teams.set_index('id')['name'].to_dict()
@@ -38,10 +38,10 @@ df['name'] = df['first_name'] + ' ' + df['second_name']
 df['value_ratio'] = df['total_points'] / df['now_cost']
 
 # Eliminate players with very few minutes (e.g. less than 500 minutes)
-df_filtered = df[df['minutes'] > 500]
+df_filtered = df[df['minutes'] > 30]
 
-# Get the top 30 players
-top_value_players = df_filtered.sort_values(by='value_ratio', ascending=False).head(60)
+# Get the top 120 players
+top_value_players = df_filtered.sort_values(by='value_ratio', ascending=False).head(120)
 
 # Show only required columns
 result = top_value_players[['name', 'team_name', 'position', 'now_cost', 'total_points', 'value_ratio']]
