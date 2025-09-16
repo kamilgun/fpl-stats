@@ -60,7 +60,7 @@ with rows[0][2]:
         st.markdown('<div class="box">', unsafe_allow_html=True)
         player_advice(players)
         st.markdown('</div>', unsafe_allow_html=True)
-
+  
 # 2. satır
 with rows[1][0]:
     with st.container():
@@ -77,7 +77,7 @@ with rows[1][1]:
 with rows[1][2]:
     with st.container():
         st.markdown('<div class="box">', unsafe_allow_html=True)
-        show_table()
+        show_table() 
         st.markdown('</div>', unsafe_allow_html=True)
 
 # 3. satır

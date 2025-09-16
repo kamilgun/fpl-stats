@@ -65,15 +65,24 @@ def grafik_value_vs_points():
     # En verimli oyuncuları sırala
     df = df.sort_values("point_per_value", ascending=False)
 
-    st.dataframe(df[["Player", "Team", "Position", "Value", "Points", "value_ratio"]].head(120).reset_index(drop=True).rename_axis("Sıra").reset_index())
+    # st.dataframe(df[["Player", "Team", "Position", "Value", "Points", "value_ratio"]].head(120).reset_index(drop=True).rename_axis("Sıra").reset_index())
+
+    # 📋 Tablo
+    st.dataframe(
+        df[["Player", "Team", "Position", "Value", "Points", "value_ratio"]].head(120)
+        .sort_values("value_ratio", ascending=False)
+        .reset_index(drop=True)
+    )  
+
+
 
 def player_advice(players):
     st.title("Scout Assisant - Adviced Players")
     
-    cost_limit = st.slider("Maximum Player Value", 4.0, 12.5, 7.5)
+    cost_limit = st.slider("Maximum Player Value", 4.0, 12.5, 8.5)
     position = st.selectbox("Position", ["All", "Goalkeeper", "Defence", "Midfielder", "Forward"])
-    min_minutes = st.slider("Minimum minutes played", 0, 3000, 500)
-    min_points = st.slider("Minimum points", 0, 250, 50)
+    min_minutes = st.slider("Minimum minutes played", 0, 3000, 200)
+    min_points = st.slider("Minimum points", 0, 250, 20)
     sel_range = st.slider("Selection Rate (%)", 0.0, 100.0, (5.0, 25.0))
 
     # Pozisyon dönüşümü için eşleştirme sözlüğü
@@ -112,7 +121,14 @@ def player_advice(players):
 
     # Kolonları seçerek göster
     
-    st.dataframe(filtered_players[["web_name", "team", "position_name", "cost_million", "total_points", "selected_by_percent", "value_ratio"]].reset_index(drop=True).rename_axis("Sıra").reset_index())
+    #st.dataframe(filtered_players[["web_name", "team", "position_name", "cost_million", "total_points", "selected_by_percent", "value_ratio"]].reset_index(drop=True).rename_axis("Sıra").reset_index())
+
+    # 📋 Tablo
+    st.dataframe(
+        filtered_players[["web_name", "team", "position_name", "cost_million", "total_points", "selected_by_percent", "value_ratio"]]
+        .sort_values("value_ratio", ascending=False)
+        .reset_index(drop=True)
+    )  
 
 def hidden_gems():
     
@@ -269,13 +285,16 @@ def show_table():
 
     standings = []
     for team in data["standings"][0]["table"]:
+        print(team.keys())
         standings.append({
             "Pos": team["position"],
-            "T": team["team"]["name"],
+            "": team["team"]["name"],
             "P": team["playedGames"],
             "W": team["won"],
             "D": team["draw"],
             "L": team["lost"],
+            "Gf": team["goalsFor"],
+            "Ga": team["goalsAgainst"],
             "Pt": team["points"],
             "Gd": team["goalDifference"],
         })
@@ -287,7 +306,62 @@ def show_table():
     .sort_values(["Pt", "Gd"], ascending=False)
     .reset_index(drop=True)
     )
-    st.markdown(league_table_view.to_html(index=False), unsafe_allow_html=True)
+
+        # HTML tablo stilini tanımlayalım
+    table_html = league_table_view.to_html(
+        index=False,
+        classes="styled-table",
+        justify="center"
+    )
+
+    # CSS ile renklendirme
+    st.markdown("""
+    <style>
+    .styled-table {
+        border-collapse: collapse;
+        margin: 10px 0;
+        font-size: 16px;
+        font-family: sans-serif;
+        min-width: 400px;
+        box-shadow: 0 0 8px rgba(0,0,0,0.15);
+    }
+    .styled-table th {
+        background-color: #9041ff;
+        color: white;
+        text-align: center;
+        padding: 8px;
+    }
+    .styled-table td {
+        padding: 8px;
+        text-align: center;
+    }
+    .styled-table tr:nth-child(even) {
+        background-color: #f2f2f2;
+    }
+    .styled-table tr:hover {
+        background-color: #ddd;
+        font-weight: bold;
+    }
+    /* İlk 4 sıra */
+    .styled-table tr:nth-child(1),
+    .styled-table tr:nth-child(2),
+    .styled-table tr:nth-child(3),
+    .styled-table tr:nth-child(4) {
+        background-color: #d4edda !important; 
+    }
+
+    /* Son 3 sıra */
+    .styled-table tr:nth-last-child(1),
+    .styled-table tr:nth-last-child(2),
+    .styled-table tr:nth-last-child(3) {
+        background-color: #f8d7da !important; 
+    }            
+
+    </style>
+    """, unsafe_allow_html=True)
+
+    st.markdown(table_html, unsafe_allow_html=True)
+    ##st.markdown(league_table_view.to_html(index=False), unsafe_allow_html=True)
     #st.dataframe(league_table_view, use_container_width=True, hide_index=True)
     #st.table(league_table_view.style.hide(axis="index"))
     #league_table_view = (league_table.reset_index(drop=True))
