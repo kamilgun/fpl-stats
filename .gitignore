@@ -12,8 +12,3 @@ __pycache__/
 .DS_Store
 .vscode/
 Thumbs.db
-
-# Local veri / cache dosyaları
-*.csv
-weekly_exec/
-player_stats.csv
